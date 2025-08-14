@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Phiếu Thông Tin Xe</title>
+  <style>
+    :root {
+      --c-border:#d0d7de;
+      --c-text:#111827;
+      --c-muted:#6b7280;
+      --c-bg:#ffffff;
+      --c-soft:#f9fafb;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Liberation Sans", sans-serif;
+      color: var(--c-text); background: var(--c-soft);
+    }
+    .page {
+      max-width: 1200px; margin: 24px auto; padding: 16px;
+    }
+    .card {
+      background: var(--c-bg); border: 1px solid var(--c-border);
+      border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.04);
+      padding: 16px;
+    }
+    .header {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px;
+    }
+    .title {
+      font-size: 20px; font-weight: 700; letter-spacing: .2px;
+    }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    button {
+      appearance: none; border: 1px solid var(--c-border); background: #fff;
+      padding: 8px 12px; border-radius: 999px; cursor: pointer; font-weight: 600;
+    }
+    button:hover { background: #f3f4f6; }
+    .grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px 16px;
+    }
+    .field { padding: 8px 12px; background: #fff; border: 1px dashed var(--c-border); border-radius: 12px; }
+    .label { font-size: 12px; color: var(--c-muted); margin-bottom: 2px; }
+    .value { font-weight: 600; word-break: break-word; }
+    .subtle { color: var(--c-muted); }
+    .table-wrap {
+      margin-top: 16px; overflow: auto; background: #fff; border: 1px solid var(--c-border); border-radius: 16px;
+    }
+    table { border-collapse: collapse; width: 100%; min-width: 900px; }
+    thead th {
+      position: sticky; top: 0; background: #f3f4f6; z-index: 1;
+      text-align: left; padding: 10px; font-size: 13px; border-bottom: 1px solid var(--c-border);
+    }
+    tbody td {
+      padding: 8px 10px; border-bottom: 1px solid #f0f0f0; vertical-align: top; font-size: 14px;
+    }
+    tfoot td {
+      padding: 10px; font-weight: 700; background: #fafafa; border-top: 1px solid var(--c-border);
+    }
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; border: 1px solid var(--c-border);
+      background:#fff;
+    }
+    .thumb {
+      width: 68px; height: 68px; object-fit: cover; border: 1px solid var(--c-border); border-radius: 8px;
+    }
+    .empty {
+      padding: 16px; text-align: center; color: var(--c-muted);
+    }
+    @media (max-width: 920px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media print {
+      body { background: #fff; }
+      .page { margin: 0; padding: 0; }
+      .card { border: none; box-shadow: none; border-radius: 0; }
+      .actions { display: none; }
+      @page { size: A4 landscape; margin: 10mm; }
+      thead th { background: #eee !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="card">
+      <div class="header">
+        <div class="title">PHIẾU THÔNG TIN XE <span class="subtle" id="title-id"></span></div>
+        <div class="actions">
+          <button type="button" onclick="window.print()">In</button>
+          <button type="button" onclick="downloadJSON()">Tải JSON</button>
+        </div>
+      </div>
+
+      <!-- THÔNG TIN BẢNG CHA -->
+      <div class="grid" id="parent-grid">
+        <!-- fill by JS -->
+      </div>
+
+      <!-- BẢNG PHỤ THUỘC -->
+      <div class="table-wrap" id="table-wrap">
+        <table id="detail-table" aria-label="Danh sách bill theo xe">
+          <thead>
+            <tr>
+              <th>STT</th>
+              <th>Bill</th>
+              <th>Khách hàng</th>
+              <th>Tên mặt hàng</th>
+              <th>Số kiện</th>
+              <th>Tỉnh trả</th>
+              <th>Xã trả</th>
+              <th>Nơi trả</th>
+              <th>Ngày xuất xe</th>
+              <th>Ghi chú</th>
+              <th>Ảnh Bill</th>
+            </tr>
+          </thead>
+          <tbody id="detail-tbody"></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="4">Tổng</td>
+              <td id="total-kien">0</td>
+              <td colspan="6" id="total-bill" class="subtle"></td>
+            </tr>
+          </tfoot>
+        </table>
+        <div id="empty" class="empty" style="display:none">Chưa có dữ liệu chi tiết.</div>
+      </div>
+    </div>
+  </div>
+
+  <noscript>Trang này cần JavaScript để đọc dữ liệu từ URL.</noscript>
+
+  <script>
+    // ========= Helpers =========
+    const url = new URL(window.location.href);
+    const qp = url.searchParams;
+
+    const get = (k) => {
+      const v = qp.get(k);
+      if (v == null) return null;
+      try { return decodeURIComponent(v); } catch { return v; }
+    };
+
+    // Lấy tham số với nhiều tên alias (ưu tiên tên đầu)
+    const alias = (...keys) => {
+      for (const k of keys) {
+        const v = get(k);
+        if (v != null && v !== "") return v;
+      }
+      return "";
+    };
+
+    // Convert link Google Drive share -> link ảnh trực tiếp
+    function driveDirect(u) {
+      if (!u) return "";
+      const m1 = u.match(/\/d\/([^\/]+)\//);
+      const m2 = u.match(/[?&]id=([^&]+)/);
+      const id = m1?.[1] || m2?.[1];
+      return id ? `https://drive.google.com/uc?export=view&id=${id}` : u;
+    }
+
+    function parseDate(d) {
+      if (!d) return "";
+      // Nhận ISO, yyyy-mm-dd, dd/mm/yyyy...
+      const isNum = /^\d{4}-\d{2}-\d{2}/.test(d) || /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(d);
+      if (!isNum) return d;
+      try {
+        let dt;
+        if (d.includes("/")) {
+          const [dd, mm, yyyy] = d.split("/");
+          dt = new Date(+yyyy, +mm - 1, +dd);
+        } else {
+          dt = new Date(d);
+        }
+        if (isNaN(dt)) return d;
+        const dd = String(dt.getDate()).padStart(2,"0");
+        const mm = String(dt.getMonth()+1).padStart(2,"0");
+        const yyyy = dt.getFullYear();
+        return `${dd}/${mm}/${yyyy}`;
+      } catch { return d; }
+    }
+
+    // Gộp rows1, rows2, ... nếu có (để vượt giới hạn URL); nếu không, dùng rows/items/data
+    function getRowsRawString() {
+      // Thu thập mọi khóa dạng rows, rows1..rowsN
+      const parts = [];
+      qp.forEach((v, k) => {
+        const m = k.match(/^rows(\d+)?$/i);
+        if (m) {
+          const idx = m[1] ? parseInt(m[1], 10) : 1; // rows -> 1
+          let dec = v;
+          try { dec = decodeURIComponent(v); } catch {}
+          parts[idx] = dec;
+        }
+      });
+      if (parts.length > 0) return parts.filter(Boolean).join("");
+
+      // Nếu không có dạng chia nhỏ, thử các khóa phổ biến
+      for (const key of ["rows","items","data"]) {
+        const v = get(key);
+        if (v) return v;
+      }
+      return "";
+    }
+
+    function tryJSON(str) {
+      try { return JSON.parse(str); } catch(e) {}
+      try { return JSON.parse(str.replace(/'/g,'"')); } catch(e) {}
+      return null;
+    }
+
+    function normalizeKey(k="") {
+      // Chuẩn hóa khóa: bỏ dấu, bỏ khoảng trắng, thường hóa
+      const mapVN = {
+        'à':'a','á':'a','ạ':'a','ả':'a','ã':'a','â':'a','ầ':'a','ấ':'a','ậ':'a','ẩ':'a','ẫ':'a','ă':'a','ằ':'a','ắ':'a','ặ':'a','ẳ':'a','ẵ':'a',
+        'è':'e','é':'e','ẹ':'e','ẻ':'e','ẽ':'e','ê':'e','ề':'e','ế':'e','ệ':'e','ể':'e','ễ':'e',
+        'ì':'i','í':'i','ị':'i','ỉ':'i','ĩ':'i',
+        'ò':'o','ó':'o','ọ':'o','ỏ':'o','õ':'o','ô':'o','ồ':'o','ố':'o','ộ':'o','ổ':'o','ỗ':'o','ơ':'o','ờ':'o','ớ':'o','ợ':'o','ở':'o','ỡ':'o',
+        'ù':'u','ú':'u','ụ':'u','ủ':'u','ũ':'u','ư':'u','ừ':'u','ứ':'u','ự':'u','ử':'u','ữ':'u',
+        'ỳ':'y','ý':'y','ỵ':'y','ỷ':'y','ỹ':'y','đ':'d'
+      };
+      const s = k.toLowerCase().split('').map(ch => mapVN[ch] ?? ch).join('');
+      return s.replace(/\s+|_/g,''); // bỏ spaces & _
+    }
+
+    function num(v) { const n = Number(String(v).replaceAll(',', '.')); return isNaN(n)?0:n; }
+
+    // ========= Lấy & hiển thị BẢNG CHA =========
+    const parent = {
+      id: alias('id','ID'),
+      ngay: parseDate(alias('ngay','Ngay')),
+      ngayDuKien: parseDate(alias('ngay_du_kien','ngaydukientoi','ngaydukien','Ngay du kien toi','NgayDuKienToi')),
+      trangThai: alias('trang_thai','trangthai','Trangthai'),
+      ncc: alias('ncc','nhacungcap','Nha cung cap','Nhacungcap'),
+      tenNcc: alias('ten_ncc','tennhacungcap','Tennhacungcap','Ten nha cung cap'),
+      ttThanhToan: alias('tt_thanh_toan','trangthaithanhtoan','Trang thai thanh toan'),
+      bks: alias('bks','bien_kiem_soat','bienkiemsoat','Bien kiem soat'),
+      laiXe: alias('lai_xe','laixe','Lai xe'),
+      sdt: alias('sdt','sdtlx','sdtlx','Sdt lai xe'),
+      ghiChu: alias('ghi_chu','ghichu')
+    };
+
+    const parentOrder = [
+      ['ID', 'id'],
+      ['Ngày', 'ngay'],
+      ['Ngày dự kiến tới', 'ngayDuKien'],
+      ['Trạng thái', 'trangThai'],
+      ['Nhà cung cấp', 'ncc'],
+      ['Tên nhà cung cấp', 'tenNcc'],
+      ['Trạng thái thanh toán', 'ttThanhToan'],
+      ['Biển kiểm soát', 'bks'],
+      ['Lái xe', 'laiXe'],
+      ['SĐT lái xe', 'sdt'],
+      ['Ghi chú', 'ghiChu']
+    ];
+
+    document.getElementById('title-id').textContent = parent.id ? `#${parent.id}` : '';
+
+    const parentGrid = document.getElementById('parent-grid');
+    parentOrder.forEach(([label, key]) => {
+      const div = document.createElement('div');
+      div.className = 'field';
+      div.innerHTML = `<div class="label">${label}</div><div class="value">${parent[key] || '<span class="subtle">—</span>'}</div>`;
+      parentGrid.appendChild(div);
+    });
+
+    // ========= Lấy & hiển thị BẢNG PHỤ THUỘC =========
+    const raw = getRowsRawString();
+    let rows = [];
+    const parsed = tryJSON(raw);
+    if (Array.isArray(parsed)) rows = parsed;
+
+    // Chuẩn hóa từng dòng (chấp nhận nhiều cách đặt tên khóa)
+    const norm = (r={}) => {
+      // build lookup by normalized key
+      const nk = {};
+      Object.keys(r).forEach(k => nk[normalizeKey(k)] = r[k]);
+
+      const val = (keys) => {
+        for (const k of keys) {
+          const v = nk[normalizeKey(k)];
+          if (v != null && v !== '') return v;
+        }
+        return '';
+      };
+
+      return {
+        stt: val(['STT','stt','So thu tu']),
+        bill: val(['Bill']),
+        khachHang: val(['Khach hang','Khách hàng','kh']),
+        tenMatHang: val(['Ten mat hang','Tên mặt hàng','mat hang']),
+        soKien: num(val(['So kien','Số kiện','kien'])),
+        tinhTra: val(['Tinh tra','Tỉnh trả']),
+        xaTra: val(['Xa tra','Xã trả']),
+        noiTra: val(['Noi tra','Nơi trả']),
+        ngayXuatXe: parseDate(val(['Ngay xuat xe','Ngày xuất xe'])),
+        ghiChu: val(['Ghi chu','Ghi chú']),
+        anhBill: val(['Anh Bill','Ảnh Bill','Anh'])
+      };
+    };
+
+    const tbody = document.getElementById('detail-tbody');
+    const empty = document.getElementById('empty');
+
+    if (!rows.length) {
+      empty.style.display = 'block';
+    } else {
+      // Sắp xếp theo STT nếu có, nếu không giữ nguyên
+      rows = rows.map(norm).sort((a,b) => {
+        const na = Number(a.stt), nb = Number(b.stt);
+        if (!isNaN(na) && !isNaN(nb)) return na - nb;
+        return 0;
+      });
+
+      let totalKien = 0;
+      rows.forEach((r, i) => {
+        totalKien += num(r.soKien);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${r.stt || i+1}</td>
+          <td><span class="badge">${r.bill || ''}</span></td>
+          <td>${r.khachHang || ''}</td>
+          <td>${r.tenMatHang || ''}</td>
+          <td>${r.soKien || 0}</td>
+          <td>${r.tinhTra || ''}</td>
+          <td>${r.xaTra || ''}</td>
+          <td>${r.noiTra || ''}</td>
+          <td>${r.ngayXuatXe || ''}</td>
+          <td>${r.ghiChu || ''}</td>
+          <td>${r.anhBill ? `<img class="thumb" src="${driveDirect(r.anhBill)}" alt="bill">` : ''}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('total-kien').textContent = totalKien.toString();
+      document.getElementById('total-bill').textContent = `${rows.length} bill`;
+    }
+
+    // Tải lại JSON (để kiểm tra nhanh dữ liệu đã parse)
+    function downloadJSON() {
+      const data = {
+        parent,
+        rows
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `xe_${parent.id||'data'}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    window.downloadJSON = downloadJSON;
+  </script>
+</body>
+</html>

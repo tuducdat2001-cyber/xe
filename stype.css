@@ -1,0 +1,175 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Times New Roman', Times, serif;
+}
+body {
+    background-color: white;
+    color: #333;
+    line-height: 1.6;
+    padding: 0;
+    margin: 0;
+}
+.header-banner {
+    background-color: #1a5276;
+    color: white;
+    text-align: center;
+    padding: 15px 0;
+    font-size: 18px;
+    font-weight: bold;
+}
+.main-container {
+    max-width: 1000px;
+    margin: 20px auto;
+    padding: 0 20px;
+}
+.title-box {
+    border: 2px solid #1a5276;
+    padding: 25px;
+    margin: 20px 0;
+    position: relative;
+    background: white;
+    text-align: center;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.teacher-profile {
+    position: absolute;
+    top: -20px;
+    left: -20px;
+    width: 90px;
+    height: 90px;
+    background-color: #dfe6df;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #1a5276;
+    font-weight: bold;
+    font-size: 13px;
+    text-align: center;
+    padding: 5px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    z-index: 10;
+}
+.teacher-img-placeholder {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background-color: #fff;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: #1a5276;
+}
+.encouragement {
+    color: #1a5276;
+    font-size: 10px;
+    margin-bottom: 12px;
+    font-style: italic;
+}
+.main-title {
+    color: #1a5276;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 10px;
+}
+.question {
+    margin-bottom: 4px;
+    padding: 4px;
+    background: #f9f9f9;
+    border-radius: 3px;
+}
+.question-number {
+    color: #e74c3c;
+    font-weight: bold;
+    font-size: 18px;
+}
+.question-code {
+    color: #7f8c8d;
+    font-size: 15px;
+    background: #eee;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 5px;
+}
+.question-text {
+    margin: 15px 0;
+    font-size: 17px;
+    line-height: 1.5;
+    text-align: justify;
+}
+
+/* ======= Đáp án không hộp (phù hợp in giấy) ======= */
+.options {
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;  /* giãn đều các đáp án ra hết chiều ngang */
+    align-items: center;
+    flex-wrap: nowrap;               /* giữ 1 hàng, không xuống dòng */
+    gap: 0;                          /* bỏ khoảng cách mặc định */
+}
+
+.option {
+    display: flex;
+    align-items: center;
+    flex: 1;                         /* mỗi đáp án chiếm phần bằng nhau */
+    white-space: nowrap;             /* không cho chữ xuống dòng */
+}
+
+.option-letter {
+    color: #2980b9;
+    font-weight: bold;
+    margin-right: 5px;
+    font-size: 16px;
+}
+
+/* ======= Footer ======= */
+.footer {
+    background-color: #1a5276;
+    color: white;
+    padding: 20px 0;
+    text-align: center;
+    margin-top: 40px;
+    font-size: 17px;
+    position: relative;
+}
+.footer-content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 20px;
+    line-height: 1.5;
+}
+.page-number {
+    position: absolute;
+    right: 20px;
+    bottom: 15px;
+    color: white;
+    font-size: 16px;
+}
+.copyright {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #ecf0f1;
+}
+/* ====== TRANG ĐÁP ÁN ====== */
+.answer-key{max-width:1000px;margin:30px auto 0;padding:0 20px 40px;}
+.answer-title-box{border:2px solid #1a5276;border-radius:8px;text-align:center;padding:22px;margin-bottom:22px;background:#fff;box-shadow:0 4px 8px rgba(0,0,0,.1);}
+.answer-title{color:#1a5276;font-size:26px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+
+.answer-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px 24px}
+.answer-item{background:#f9f9f9;border-radius:6px;padding:10px 12px;border-bottom:1px dashed #ccc;display:flex;align-items:center;gap:6px}
+.answer-item .q{color:#e74c3c;font-weight:700}
+.answer-item .ans{color:#2980b9;font-weight:700}
+
+@media print{
+  .page-break-before{page-break-before:always}
+  .answer-list{grid-template-columns:repeat(5,1fr)}
+  .answer-item{background:transparent}
+}

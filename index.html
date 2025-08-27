@@ -182,7 +182,110 @@
   async function getFromSrcParam(){
     const url = new URL(location.href);
     const src = url.searchParams.get('src');
-    if(!src) return null;
+    if(!src) return null;<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đề Trắc Nghiệm Tiếng Anh (JSON)</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Bổ sung nhỏ để đảm bảo vùng mount có id */
+    .questions-container { margin-top: 10px; }
+    .answer-key { margin-top: 24px; }
+  </style>
+</head>
+<body>
+  <div class="header-banner"></div>
+
+  <div class="main-container">
+    <div class="title-box">
+      <div class="teacher-profile">
+        <div class="teacher-img-placeholder"></div>
+        Cô Phương Thảo
+      </div>
+      <p class="encouragement"></p>
+      <h1 class="main-title">Choose the best answer</h1>
+    </div>
+
+    <!-- NƠI RENDER CÂU HỎI -->
+    <div id="questions-container" class="questions-container"></div>
+  </div>
+
+  <!-- Trang đáp án tự động -->
+  <div class="page-break-before"></div>
+  <section class="answer-key">
+    <div class="answer-title-box">
+      <div class="answer-title">ĐÁP ÁN</div>
+    </div>
+    <div id="answer-key"></div>
+  </section>
+
+  <div class="footer">
+    <div class="footer-content">
+      <div class="copyright"></div>
+    </div>
+    <div class="page-number"></div>
+  </div>
+
+  <!-- ==== JSON DATA + RENDER SCRIPT ==== -->
+  <script>
+  // Bạn có thể sửa dữ liệu câu hỏi/đáp án ngay trong mảng này.
+  // Cấu trúc: id, text, options (A-D), answer (chữ cái A/B/C/D)
+  // Lấy dữ liệu do n8n bơm vào (từ body POST)
+function getQuestionsFromPost() {
+  try {
+    const q = window.__QUESTIONS__;
+    if (Array.isArray(q)) return q;                  // body là mảng thuần []
+    if (q && Array.isArray(q.questions)) return q.questions; // body dạng { questions: [...] }
+  } catch (e) {}
+  return [];
+}
+const questions = getQuestionsFromPost();
+
+  function renderQuestions() {
+    const container = document.getElementById("questions-container");
+    container.innerHTML = "";
+    questions.forEach((q) => {
+      const questionDiv = document.createElement("div");
+      questionDiv.classList.add("question");
+
+      const qHtml = `
+        <p>
+          <span class="question-number">${q.id}.</span>
+          <span class="question-text">${q.text}</span>
+        </p>
+      `;
+
+      const optsHtml = q.options
+        .map((opt, idx) => {
+          const letter = String.fromCharCode(65 + idx); // A, B, C, D
+          return `<p class="option"><span class="option-letter">${letter}.</span> ${opt}</p>`;
+        })
+        .join("");
+
+      questionDiv.innerHTML = qHtml + `<div class="options">${optsHtml}</div>`;
+      container.appendChild(questionDiv);
+    });
+  }
+
+  function renderAnswers() {
+    const answerWrap = document.getElementById("answer-key");
+    const items = questions
+      .map(
+        (q) =>
+          `<li class="answer-item"><span class="q">Câu ${q.id}:</span><span class="ans">${q.answer}</span></li>`
+      )
+      .join("");
+    answerWrap.innerHTML = `<ol class="answer-list">${items}</ol>`;
+  }
+
+  renderQuestions();
+  renderAnswers();
+  </script>
+</body>
+</html>
+
     const res = await fetch(src, {cache:'no-store'});
     if(!res.ok) throw new Error('Không tải được src JSON');
     return await res.json();
